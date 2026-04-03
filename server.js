@@ -21,8 +21,9 @@ app.post("/ai", async (req, res) => {
       return res.status(400).json({ error: "Prompt is required" });
     }
 
-    console.log("Incoming prompt length:", prompt.length);
-    console.log("Key exists:", !!process.env.OPENAI_API_KEY);
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: "OPENAI_API_KEY is missing in Render" });
+    }
 
     const apiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -58,15 +59,13 @@ app.post("/ai", async (req, res) => {
     const result = data?.choices?.[0]?.message?.content;
 
     if (!result) {
-      return res.status(500).json({
-        error: "No text returned from OpenAI"
-      });
+      return res.status(500).json({ error: "No text returned from OpenAI" });
     }
 
-    res.json({ result });
+    return res.json({ result });
   } catch (error) {
     console.error("Server error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error.message || "Internal server error"
     });
   }
