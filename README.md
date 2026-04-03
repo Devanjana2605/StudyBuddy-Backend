@@ -1,6 +1,6 @@
 
 
-## Backend README
+## Backend of StudyBuddy AI
 
 StudyBuddy AI Backend is the server-side component of the StudyBuddy AI Chrome extension. It handles requests from the frontend, sends prompts to the AI API, and returns processed responses such as summaries, explanations, and quiz questions.
 
