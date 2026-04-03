@@ -21,45 +21,45 @@ app.post("/ai", async (req, res) => {
       return res.status(400).json({ error: "Prompt is required" });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: "OPENAI_API_KEY is missing in Render" });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "GEMINI_API_KEY is missing" });
     }
 
-    const apiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a helpful student assistant. Give short, clear, student-friendly answers."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7
-      })
-    });
+    const apiResponse = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ]
+        })
+      }
+    );
 
     const data = await apiResponse.json();
-    console.log("OpenAI raw response:", JSON.stringify(data, null, 2));
+    console.log("Gemini raw response:", JSON.stringify(data, null, 2));
 
     if (!apiResponse.ok) {
       return res.status(apiResponse.status).json({
-        error: data?.error?.message || "OpenAI API request failed"
+        error: data?.error?.message || "Gemini API request failed"
       });
     }
 
-    const result = data?.choices?.[0]?.message?.content;
+    const result = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!result) {
-      return res.status(500).json({ error: "No text returned from OpenAI" });
+      return res.status(500).json({ error: "No text returned from Gemini" });
     }
 
     return res.json({ result });
