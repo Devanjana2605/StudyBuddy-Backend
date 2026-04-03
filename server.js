@@ -17,14 +17,17 @@ app.post("/ai", async (req, res) => {
   try {
     const { prompt } = req.body;
 
-    if (!prompt) {
+    if (!prompt || !prompt.trim()) {
       return res.status(400).json({ error: "Prompt is required" });
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    console.log("Incoming prompt length:", prompt.length);
+    console.log("Key exists:", !!process.env.OPENAI_API_KEY);
+
+    const apiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -32,35 +35,40 @@ app.post("/ai", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are a helpful student assistant. Give clear, simple, and useful study help."
+            content: "You are a helpful student assistant. Give short, clear, student-friendly answers."
           },
           {
             role: "user",
             content: prompt
           }
-        ]
+        ],
+        temperature: 0.7
       })
     });
 
-    const data = await response.json();
-    console.log("OpenAI response:", JSON.stringify(data, null, 2));
+    const data = await apiResponse.json();
+    console.log("OpenAI raw response:", JSON.stringify(data, null, 2));
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data.error?.message || "OpenAI API request failed"
+    if (!apiResponse.ok) {
+      return res.status(apiResponse.status).json({
+        error: data?.error?.message || "OpenAI API request failed"
       });
     }
 
-    const result = data.choices?.[0]?.message?.content;
+    const result = data?.choices?.[0]?.message?.content;
 
     if (!result) {
-      return res.status(500).json({ error: "No text returned from AI" });
+      return res.status(500).json({
+        error: "No text returned from OpenAI"
+      });
     }
 
     res.json({ result });
   } catch (error) {
     console.error("Server error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: error.message || "Internal server error"
+    });
   }
 });
 
